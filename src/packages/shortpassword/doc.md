@@ -20,22 +20,22 @@ app.use(ShortPassword);
 
 ``` html
 <nut-shortpassword
-  v-model:value="state.value"
+  v-model="state.value"
   v-model:visible="state.visible"
   :no-button="state.noButton"
   :length="state.length"
   :error-msg="state.errorMsg"
-  @on-change="methods.onChange"
-  @on-complete="methods.onComplete"
-  @on-ok="methods.onOk"
-  @on-tips="methods.onTips">
+  @change="methods.onChange"
+  @complete="methods.onComplete"
+  @ok="methods.onOk"
+  @tips="methods.onTips">
 </nut-shortpassword>
 ```
 
 ``` javascript
 import { reactive, getCurrentInstance } from 'vue';
 setup() {
-  let { ctx } = getCurrentInstance();
+  let { proxy } = getCurrentInstance();
   const state = reactive({
     visible: false,
     noButton: true,
@@ -45,17 +45,17 @@ setup() {
   });
   const methods = {
     onChange(val: string) {
-      val && ctx.$toast.text(val);
+      val && proxy.$toast.text(val);
     },
     onOk(val: string) {
-      val && ctx.$toast.text(val);
+      val && proxy.$toast.text(val);
       state.visible = false;
     },
     onComplete() {
       
     },
     onTips() {
-      ctx.$toast.text('执行忘记密码逻辑');
+      proxy.$toast.text('执行忘记密码逻辑');
     }
   };
   return {
@@ -103,6 +103,7 @@ setup() {
 | tips | 提示语| String | 忘记密码|
 | visible | 是否展示短密码框| Boolean | false|
 | value | 密码初始值 | String | ''|
+| close-on-click-overlay | 是否点击遮罩关闭  | Boolean | true|
 | no-button | 是否隐藏底部按钮 |Boolean|true|
 | length | 密码长度，取值为4~6 |String||Number|6|
 | error-msg | 错误信息提示 |String|''|
@@ -113,5 +114,8 @@ setup() {
 | 事件名称 | 说明 | 回调参数
 |----- | ----- | ----- 
 | change | 输入密码时触发事件 | --
-| on-ok | 点击确实时触发事件 | value
+| ok | 点击确实时触发事件 | value
+| cancel | 点击取消时触发事件| value
+| close | 点击关闭图标时触发事件| value
 | complete | 输入完成的回调 | value
+

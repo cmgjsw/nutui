@@ -15,12 +15,22 @@
         }}</view>
       </view>
     </view>
-    <view class="upload" v-if="maxCount - fileList.length">
+    <view class="upload" v-if="maximum - fileList.length">
       <nut-icon color="#808080" :name="uploadIcon"></nut-icon>
       <input
+        v-if="capture"
         type="file"
-        :capture="capture"
-        :accept="acceptType"
+        capture="camera"
+        :accept="accept"
+        :multiple="multiple"
+        :name="name"
+        :disabled="disabled"
+        @change="onChange"
+      />
+      <input
+        v-else
+        type="file"
+        :accept="accept"
         :multiple="multiple"
         :name="name"
         :disabled="disabled"
@@ -53,18 +63,18 @@ export default create({
   props: {
     name: { type: String, default: 'file' },
     url: { type: String, default: '' },
-    defaultFileList: { type: Array, default: () => new Array<FileItem>() },
+    // defaultFileList: { type: Array, default: () => new Array<FileItem>() },
     fileList: { type: Array, default: () => [] },
     isPreview: { type: Boolean, default: true },
     isDeletable: { type: Boolean, default: true },
     method: { type: String, default: 'post' },
-    capture: { type: String, default: '' },
-    maxSize: { type: [Number, String], default: Number.MAX_VALUE },
-    maxCount: { type: [Number, String], default: 1 },
+    capture: { type: Boolean, default: false },
+    maximize: { type: [Number, String], default: Number.MAX_VALUE },
+    maximum: { type: [Number, String], default: 1 },
     clearInput: { type: Boolean, default: false },
-    acceptType: { type: String, default: '*' },
+    accept: { type: String, default: '*' },
     headers: { type: Object, default: {} },
-    formData: { type: Object, default: {} },
+    data: { type: Object, default: {} },
     uploadIcon: { type: String, default: 'photograph' },
     xhrState: { type: [Number, String], default: 200 },
     withCredentials: { type: Boolean, default: false },
@@ -72,9 +82,7 @@ export default create({
     disabled: { type: Boolean, default: false },
     beforeUpload: {
       type: Function,
-      default: (files: FileList) => {
-        return files;
-      }
+      default: null
     },
     beforeDelete: {
       type: Function,
@@ -82,8 +90,8 @@ export default create({
         return true;
       }
     },
-    onChange: { type: Function },
-    customRequest: { type: Function }
+    onChange: { type: Function }
+    // customRequest: { type: Function }
   },
   emits: [
     'start',
@@ -91,8 +99,8 @@ export default create({
     'oversize',
     'success',
     'failure',
-    'on-change',
-    'on-delete'
+    'change',
+    'delete'
   ],
   setup(props, { emit }) {
     const fileList = reactive(props.fileList) as Array<FileItem>;
@@ -110,7 +118,7 @@ export default create({
     const executeUpload = (fileItem: FileItem) => {
       const uploadOption = new UploadOptions();
       uploadOption.url = props.url;
-      for (const [key, value] of Object.entries(props.formData)) {
+      for (const [key, value] of Object.entries(props.data)) {
         fileItem.formData.append(key, value);
       }
       uploadOption.formData = fileItem.formData;
@@ -179,11 +187,11 @@ export default create({
     };
 
     const filterFiles = (files: File[]) => {
-      const maxCount = (props.maxCount as number) * 1;
-      const maxSize = (props.maxSize as number) * 1;
+      const maximum = (props.maximum as number) * 1;
+      const maximize = (props.maximize as number) * 1;
       const oversizes = new Array<File>();
       files = files.filter((file: File) => {
-        if (file.size > maxSize) {
+        if (file.size > maximize) {
           oversizes.push(file);
           return false;
         } else {
@@ -193,15 +201,15 @@ export default create({
       if (oversizes.length) {
         emit('oversize', oversizes);
       }
-      if (files.length > maxCount) {
-        files.splice(maxCount - 1, files.length - maxCount);
+      if (files.length > maximum) {
+        files.splice(maximum - 1, files.length - maximum);
       }
       return files;
     };
     const onDelete = (file: FileItem, index: number) => {
       if (props.beforeDelete(file, fileList)) {
         fileList.splice(index, 1);
-        emit('on-delete', {
+        emit('delete', {
           file,
           fileList
         });
@@ -217,19 +225,21 @@ export default create({
       const $el = event.target as HTMLInputElement;
       let { files } = $el;
 
-      if (props.beforeUpload) {
-        files = props.beforeUpload(files);
-      }
-
-      const _files: File[] = filterFiles(new Array<File>().slice.call(files));
-
-      readFile(_files);
-
       if (props.clearInput) {
         clearInput($el);
       }
 
-      emit('on-change', {
+      if (props.beforeUpload) {
+        props.beforeUpload(files).then((f: Array<File>) => {
+          const _files: File[] = filterFiles(new Array<File>().slice.call(f));
+          readFile(_files);
+        });
+      } else {
+        const _files: File[] = filterFiles(new Array<File>().slice.call(files));
+        readFile(_files);
+      }
+
+      emit('change', {
         fileList,
         event
       });

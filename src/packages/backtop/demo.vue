@@ -42,7 +42,7 @@ const { createDemo } = createComponent('backtop');
 export default createDemo({
   setup(props, { emit }) {
     const handleClick = () => {
-      console.log('触发回到顶部');
+      console.log('触发返回顶部');
     };
 
     return {
@@ -67,7 +67,6 @@ export default createDemo({
     border-radius: 7px;
     box-shadow: 0px 1px 7px 0px rgba(237, 238, 241, 1);
     line-height: 19px;
-    font-family: PingFangSC-Medium;
     font-size: 13px;
     color: rgba(102, 102, 102, 1);
   }
